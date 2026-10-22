@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abcsoftware.pe/schemas/cpe-emission-response.schema.json",
+  "title": "CpeEmissionResponseDto",
+  "description": "Contrato de respuesta tras la emisión, firma digital XAdES-BES, registro en Kardex y envío a OSE/SUNAT.",
+  "type": "object",
+  "required": [
+    "documentId",
+    "fullDocumentNumber",
+    "status",
+    "xmlFileName",
+    "digestValueHash",
+    "qrCodeString",
+    "taxSummary",
+    "kardexMovementIds"
+  ],
+  "properties": {
+    "documentId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "fullDocumentNumber": {
+      "type": "string",
+      "pattern": "^(F|B)[A-Z0-9]{3}-[0-9]{1,8}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACCEPTED", "OBSERVED", "REJECTED", "QUEUED_OFFLINE"]
+    },
+    "xmlFileName": {
+      "type": "string",
+      "pattern": "^[0-9]{11}-(01|03|07|08)-(F|B)[A-Z0-9]{3}-[0-9]{1,8}\\.xml$"
+    },
+    "digestValueHash": {
+      "type": "string",
+      "description": "Valor de ds:DigestValue generado en la firma digital XAdES-BES."
+    },
+    "qrCodeString": {
+      "type": "string",
+      "description": "Cadena oficial SUNAT: RUC|TipoDoc|Serie|Correlativo|IGV|Total|Fecha|TipoDocCliente|NumDocCliente|DigestValue|"
+    },
+    "sunatCdr": {
+      "type": ["object", "null"],
+      "required": ["responseCode", "description"],
+      "properties": {
+        "responseCode": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "taxSummary": {
+      "type": "object",
+      "required": [
+        "gravadoTotal",
+        "exoneradoTotal",
+        "inafectoTotal",
+        "gratuitoTotal",
+        "iscTotal",
+        "igvTotal",
+        "icbperTotal",
+        "payableAmount"
+      ],
+      "properties": {
+        "gravadoTotal": { "type": "number" },
+        "exoneradoTotal": { "type": "number" },
+        "inafectoTotal": { "type": "number" },
+        "gratuitoTotal": { "type": "number" },
+        "iscTotal": { "type": "number" },
+        "igvTotal": { "type": "number" },
+        "icbperTotal": { "type": "number" },
+        "payableAmount": { "type": "number" }
+      }
+    },
+    "kardexMovementIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    }
+  }
+}

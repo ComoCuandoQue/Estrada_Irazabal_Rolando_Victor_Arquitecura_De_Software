@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abcsoftware.pe/schemas/legacy-migration-contract.schema.json",
+  "title": "LegacyToFormalKardexMigrationContract",
+  "description": "Contrato de migración sin pérdida de trazabilidad desde las fichas informales del software básico (fecha, ingreso, salida, producto, nro_documento) hacia el Kardex Formal SUNAT.",
+  "type": "object",
+  "required": [
+    "batchId",
+    "executionMode",
+    "defaultEstablishmentCode",
+    "records",
+    "productHomologationMap"
+  ],
+  "properties": {
+    "batchId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "executionMode": {
+      "type": "string",
+      "enum": ["DRY_RUN", "COMMIT"],
+      "description": "DRY_RUN simula y reporta saldos negativos o productos sin homologar; COMMIT persiste en transacción ACID."
+    },
+    "defaultEstablishmentCode": {
+      "type": "string",
+      "pattern": "^[0-9]{4}$",
+      "default": "0000"
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "legacyRowId",
+          "fecha",
+          "ingreso",
+          "salida",
+          "producto",
+          "nro_documento"
+        ],
+        "properties": {
+          "legacyRowId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fecha": {
+            "type": "string",
+            "description": "Campo legado 'fecha' (acepta DD/MM/YYYY o YYYY-MM-DD)."
+          },
+          "ingreso": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Campo legado 'ingreso' (cantidad que entra al almacén)."
+          },
+          "salida": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Campo legado 'salida' (cantidad que sale del almacén)."
+          },
+          "producto": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Campo legado 'producto' (nombre libre usado en las fichas antiguas)."
+          },
+          "nro_documento": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Campo legado 'nro_documento' (número interno informal, ej. 'VALE-0089', 'S/N', '001-450')."
+          }
+        }
+      }
+    },
+    "productHomologationMap": {
+      "type": "object",
+      "description": "Diccionario que vincula el nombre 'producto' legado con los catálogos formales de SUNAT.",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "sku",
+          "formalName",
+          "sunatUnitCodeCat03",
+          "existenceTypeTabla02",
+          "defaultIgvAffectationCat07",
+          "initialUnitCost"
+        ],
+        "properties": {
+          "sku": {
+            "type": "string",
+            "pattern": "^[A-Z0-9-]{3,30}$"
+          },
+          "formalName": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "sunatUnitCodeCat03": {
+            "type": "string",
+            "enum": ["NIU", "BX", "KGM", "LTR", "BG", "PK"]
+          },
+          "unspscCodeCat25": {
+            "type": "string",
+            "pattern": "^[0-9]{8}$"
+          },
+          "existenceTypeTabla02": {
+            "type": "string",
+            "default": "01",
+            "description": "Tabla 2 SUNAT: 01=Mercadería."
+          },
+          "defaultIgvAffectationCat07": {
+            "type": "string",
+            "enum": ["10", "20", "30"]
+          },
+          "defaultIscSystemCat08": {
+            "type": ["string", "null"],
+            "enum": ["01", "02", "03", null]
+          },
+          "initialUnitCost": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

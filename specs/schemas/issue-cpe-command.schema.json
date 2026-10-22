@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abcsoftware.pe/schemas/issue-cpe-command.schema.json",
+  "title": "IssueCpeCommandDto",
+  "description": "Contrato formal Spec-First para emisión de Factura (01), Boleta (03), Nota de Crédito (07) y Nota de Débito (08) conforme a UBL 2.1 y Anexo N.º 8 SUNAT.",
+  "type": "object",
+  "required": [
+    "idempotencyKey",
+    "documentTypeCode",
+    "operationTypeCode",
+    "series",
+    "correlative",
+    "issueDate",
+    "issueTime",
+    "currencyCode",
+    "customer",
+    "paymentTerms",
+    "items"
+  ],
+  "properties": {
+    "idempotencyKey": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Clave única de idempotencia para evitar duplicidad de correlativos ante reintentos de red."
+    },
+    "documentTypeCode": {
+      "type": "string",
+      "enum": ["01", "03", "07", "08"],
+      "description": "Catálogo N.º 01 SUNAT: 01=Factura, 03=Boleta de Venta, 07=Nota de Crédito, 08=Nota de Débito."
+    },
+    "operationTypeCode": {
+      "type": "string",
+      "default": "0101",
+      "enum": ["0101", "0102", "0200", "1001"],
+      "description": "Catálogo N.º 51 SUNAT: 0101=Venta Interna, 1001=Operación Sujeta a Detracción."
+    },
+    "series": {
+      "type": "string",
+      "pattern": "^(F|B)[A-Z0-9]{3}$",
+      "description": "Serie alfanumérica de 4 caracteres iniciada en F (Facturas y Notas asociadas) o B (Boletas y Notas asociadas)."
+    },
+    "correlative": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99999999,
+      "description": "Correlativo numérico secuencial de 1 a 8 dígitos."
+    },
+    "issueDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de emisión en formato YYYY-MM-DD (cbc:IssueDate)."
+    },
+    "issueTime": {
+      "type": "string",
+      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$",
+      "description": "Hora de emisión en formato HH:MM:SS (cbc:IssueTime)."
+    },
+    "dueDate": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Fecha de vencimiento opcional en formato YYYY-MM-DD (cbc:DueDate)."
+    },
+    "currencyCode": {
+      "type": "string",
+      "enum": ["PEN", "USD"],
+      "description": "Catálogo N.º 02 SUNAT (ISO 4217 Alpha): PEN=Soles, USD=Dólares Americanos."
+    },
+    "establishmentCode": {
+      "type": "string",
+      "pattern": "^[0-9]{4}$",
+      "default": "0000",
+      "description": "Código de establecimiento anexo del emisor en el RUC (0000 = Domicilio Fiscal)."
+    },
+    "customer": {
+      "type": "object",
+      "required": ["identityDocType", "identityDocNumber", "legalName"],
+      "properties": {
+        "identityDocType": {
+          "type": "string",
+          "enum": ["6", "1", "4", "7", "0"],
+          "description": "Catálogo N.º 06 SUNAT: 6=RUC (Módulo 11 obligatorio), 1=DNI, 4=Carnet Extranjería, 7=Pasaporte, 0=Clientes Varios."
+        },
+        "identityDocNumber": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 15
+        },
+        "legalName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 1500
+        },
+        "ubigeo": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]{6}$",
+          "description": "Catálogo N.º 13 SUNAT (INEI 6 dígitos)."
+        },
+        "address": {
+          "type": ["string", "null"],
+          "maxLength": 500
+        },
+        "email": {
+          "type": ["string", "null"],
+          "format": "email"
+        }
+      }
+    },
+    "paymentTerms": {
+      "type": "object",
+      "required": ["condition"],
+      "properties": {
+        "condition": {
+          "type": "string",
+          "enum": ["Contado", "Credito"],
+          "description": "RS N.º 193-2020/SUNAT: Forma de pago."
+        },
+        "netPendingAmount": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "installments": {
+          "type": "array",
+          "description": "Obligatorio cuando condition == 'Credito'.",
+          "items": {
+            "type": "object",
+            "required": ["installmentId", "amount", "dueDate"],
+            "properties": {
+              "installmentId": {
+                "type": "string",
+                "pattern": "^Cuota[0-9]{3}$"
+              },
+              "amount": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "dueDate": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        }
+      }
+    },
+    "billingReference": {
+      "type": ["object", "null"],
+      "description": "Obligatorio cuando documentTypeCode es '07' (Nota de Crédito) o '08' (Nota de Débito).",
+      "required": ["refDocType", "refSeriesCorrelative", "reasonCode", "reasonDescription"],
+      "properties": {
+        "refDocType": {
+          "type": "string",
+          "enum": ["01", "03"]
+        },
+        "refSeriesCorrelative": {
+          "type": "string",
+          "pattern": "^(F|B)[A-Z0-9]{3}-[0-9]{1,8}$"
+        },
+        "refIssueDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "reasonCode": {
+          "type": "string",
+          "pattern": "^[0-9]{2}$",
+          "description": "Catálogo N.º 09 (Notas de Crédito: 01..13) o Catálogo N.º 10 (Notas de Débito: 01..03)."
+        },
+        "reasonDescription": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 250
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "sku",
+          "description",
+          "unitCode",
+          "quantity",
+          "unitValue",
+          "igvAffectationCode"
+        ],
+        "properties": {
+          "sku": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "unspscCode": {
+            "type": ["string", "null"],
+            "pattern": "^[0-9]{8}$",
+            "description": "Catálogo N.º 25 SUNAT (UNSPSC v14 de 8 dígitos)."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "unitCode": {
+            "type": "string",
+            "enum": ["NIU", "BX", "KGM", "LTR", "BG", "PK", "DZN", "TNE"],
+            "description": "Catálogo N.º 03 SUNAT (UN/ECE Rec 20)."
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "unitValue": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Valor unitario sin impuestos (hasta 10 decimales). 0.00 en transferencias gratuitas."
+          },
+          "referenceUnitValue": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "description": "Valor referencial unitario (Catálogo 16 = 02) obligatorio cuando igvAffectationCode es bonificación/retiro gratuito."
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0
+          },
+          "igvAffectationCode": {
+            "type": "string",
+            "enum": ["10", "11", "12", "13", "14", "15", "16", "17", "20", "21", "30", "31", "32", "33", "34", "35", "36", "40"],
+            "description": "Catálogo N.º 07 SUNAT: Tipo de Afectación del IGV."
+          },
+          "iscConfiguration": {
+            "type": ["object", "null"],
+            "description": "Configuración del Impuesto Selectivo al Consumo según el Catálogo N.º 08 de SUNAT.",
+            "required": ["systemCodeCat08", "rateOrFixedAmount"],
+            "properties": {
+              "systemCodeCat08": {
+                "type": "string",
+                "enum": ["01", "02", "03"],
+                "description": "Catálogo N.º 08 SUNAT: 01=Sistema al Valor, 02=Aplicación del Monto Fijo, 03=Sistema de Precios de Venta al Público."
+              },
+              "rateOrFixedAmount": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Porcentaje (para 01 y 03) o monto fijo en Soles por unidad/litro (para 02)."
+              },
+              "suggestedRetailPrice": {
+                "type": ["number", "null"],
+                "exclusiveMinimum": 0,
+                "description": "Precio de venta al público sugerido (obligatorio cuando systemCodeCat08 == '03')."
+              }
+            }
+          },
+          "appliesIcbper": {
+            "type": "boolean",
+            "default": false,
+            "description": "Indica si el ítem está afecto al Impuesto al Consumo de las Bolsas de Plástico (Tributo 7152)."
+          }
+        }
+      }
+    }
+  }
+}

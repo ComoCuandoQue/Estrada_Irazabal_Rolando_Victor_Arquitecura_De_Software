@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abcsoftware.pe/schemas/kardex-formal-12-1-13-1.schema.json",
+  "title": "FormalKardexBookSunatDto",
+  "description": "Contrato de representación del Registro de Inventario Permanente en Unidades Físicas (Formato 12.1) y Valorizado (Formato 13.1) según RS N.º 234-2006/SUNAT.",
+  "type": "object",
+  "required": [
+    "period",
+    "ruc",
+    "companyLegalName",
+    "establishmentCode",
+    "valuationMethodTabla05",
+    "productHeader",
+    "entries"
+  ],
+  "properties": {
+    "period": {
+      "type": "string",
+      "pattern": "^[0-9]{6}$",
+      "description": "Periodo tributario YYYYMM."
+    },
+    "ruc": {
+      "type": "string",
+      "pattern": "^[0-9]{11}$"
+    },
+    "companyLegalName": {
+      "type": "string"
+    },
+    "establishmentCode": {
+      "type": "string",
+      "pattern": "^[0-9]{4}$"
+    },
+    "valuationMethodTabla05": {
+      "type": "string",
+      "enum": ["1", "2"],
+      "default": "1",
+      "description": "Tabla 5 SUNAT: 1=Promedio Ponderado, 2=PEPS (FIFO)."
+    },
+    "productHeader": {
+      "type": "object",
+      "required": ["sku", "existenceTypeTabla02", "description", "unitCodeTabla06Cat03"],
+      "properties": {
+        "sku": { "type": "string" },
+        "existenceTypeTabla02": { "type": "string", "example": "01" },
+        "description": { "type": "string" },
+        "unitCodeTabla06Cat03": { "type": "string", "example": "BG" },
+        "unspscCodeCat25": { "type": "string" }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kardexEntryId",
+          "issueDate",
+          "documentTypeTabla10",
+          "documentSeries",
+          "documentCorrelative",
+          "operationTypeTabla12",
+          "physicalIn",
+          "physicalOut",
+          "physicalBalance",
+          "valuedIn",
+          "valuedOut",
+          "valuedBalance"
+        ],
+        "properties": {
+          "kardexEntryId": { "type": "string", "format": "uuid" },
+          "issueDate": { "type": "string", "format": "date" },
+          "documentTypeTabla10": {
+            "type": "string",
+            "enum": ["00", "01", "03", "07", "08", "09"],
+            "description": "Tabla 10 SUNAT: 00=Otros (Migración legada), 01=Factura, 03=Boleta, 07=NC, 08=ND, 09=Guía Remisión."
+          },
+          "documentSeries": { "type": "string" },
+          "documentCorrelative": { "type": "string" },
+          "operationTypeTabla12": {
+            "type": "string",
+            "enum": ["01", "02", "05", "16", "99"],
+            "description": "Tabla 12 SUNAT: 01=Venta, 02=Compra, 05=Devolución Recibida, 16=Saldo Inicial, 99=Otros."
+          },
+          "physicalIn": { "type": "number", "minimum": 0 },
+          "physicalOut": { "type": "number", "minimum": 0 },
+          "physicalBalance": { "type": "number", "minimum": 0 },
+          "valuedIn": {
+            "type": "object",
+            "required": ["unitCost", "totalCost"],
+            "properties": {
+              "unitCost": { "type": "number", "minimum": 0 },
+              "totalCost": { "type": "number", "minimum": 0 }
+            }
+          },
+          "valuedOut": {
+            "type": "object",
+            "required": ["unitCost", "totalCost"],
+            "properties": {
+              "unitCost": { "type": "number", "minimum": 0 },
+              "totalCost": { "type": "number", "minimum": 0 }
+            }
+          },
+          "valuedBalance": {
+            "type": "object",
+            "required": ["unitCost", "totalCost"],
+            "properties": {
+              "unitCost": { "type": "number", "minimum": 0 },
+              "totalCost": { "type": "number", "minimum": 0 }
+            }
+          },
+          "legacyTraceability": {
+            "type": ["object", "null"],
+            "description": "Presente cuando el asiento proviene de la migración del software básico antiguo.",
+            "required": ["legacyRowId", "legacyDocumentRef", "sha256Hash"],
+            "properties": {
+              "legacyRowId": { "type": "string" },
+              "legacyDocumentRef": { "type": "string" },
+              "sha256Hash": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

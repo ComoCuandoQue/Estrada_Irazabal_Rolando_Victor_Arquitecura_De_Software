@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  ABC SOFTWARE CORP — EJEMPLO CANÓNICO DE FACTURA ELECTRÓNICA OASIS UBL 2.1
+  Esquema Base: OASIS UBL-Invoice-2.1.xsd
+  Normativa: RS N.º 097-2012/SUNAT, RS N.º 193-2020/SUNAT y Anexo N.º 8
+  Incluye:
+    - Línea 1: Mercadería Gravada (Arroz Extra - Catálogo 07 = 10)
+    - Línea 2: Bebida afecta a ISC (Gaseosa - Catálogo 08 = 01 Sistema al Valor + IGV 10)
+    - Línea 3: Bolsa Plástica afecta a ICBPER (Catálogo 05 = 7152 + IGV 10)
+    - Línea 4: Bonificación Gratuita Mayorista (Aceite - Catálogo 07 = 15, Tributo 9996)
+  ============================================================================
+-->
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+         xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+         xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+
+  <!-- [M-10] Contenedor de la Firma Digital XAdES-BES -->
+  <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionContent>
+        <ds:Signature Id="SignABCSoftware">
+          <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <ds:Reference URI="">
+              <ds:Transforms>
+                <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+              </ds:Transforms>
+              <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+              <ds:DigestValue>x7K9pL2mQ8vR4tY6wZ1nB3cV5xZ8=</ds:DigestValue>
+            </ds:Reference>
+          </ds:SignedInfo>
+          <ds:SignatureValue>MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7...</ds:SignatureValue>
+        </ds:Signature>
+      </ext:ExtensionContent>
+    </ext:UBLExtension>
+  </ext:UBLExtensions>
+
+  <!-- [M-01 & M-02] Versión UBL 2.1 y Customización SUNAT 2.0 -->
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID schemeAgencyName="PE:SUNAT">2.0</cbc:CustomizationID>
+
+  <!-- [M-03, M-04, M-05] Serie-Correlativo y Fecha/Hora de Emisión -->
+  <cbc:ID>F001-145</cbc:ID>
+  <cbc:IssueDate>2026-10-22</cbc:IssueDate>
+  <cbc:IssueTime>10:30:00</cbc:IssueTime>
+
+  <!-- [M-07] Catálogo 01 (01=Factura) + Catálogo 51 (@listID=0101 Venta Interna) -->
+  <cbc:InvoiceTypeCode listAgencyName="PE:SUNAT"
+                       listName="Tipo de Documento"
+                       listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01"
+                       listID="0101"
+                       name="Tipo de Operacion">01</cbc:InvoiceTypeCode>
+
+  <!-- [M-08] Catálogo 52: Leyendas (1000=Monto en letras, 1002=Transferencia gratuita) -->
+  <cbc:Note languageLocaleID="1000"><![CDATA[MIL OCHOCIENTOS SETENTA Y CUATRO Y 49/100 SOLES]]></cbc:Note>
+  <cbc:Note languageLocaleID="1002"><![CDATA[TRANSFERENCIA GRATUITA DE UN BIEN Y/O SERVICIO PRESTADO GRATUITAMENTE]]></cbc:Note>
+
+  <!-- [M-09] Catálogo 02: Moneda ISO 4217 -->
+  <cbc:DocumentCurrencyCode listID="ISO 4217 Alpha"
+                            listName="Currency"
+                            listAgencyName="United Nations Economic Commission for Europe">PEN</cbc:DocumentCurrencyCode>
+
+  <!-- Referencia a la Firma Digital -->
+  <cac:Signature>
+    <cbc:ID>20555999113</cbc:ID>
+    <cac:SignatoryParty>
+      <cac:PartyIdentification>
+        <cbc:ID>20555999113</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyName>
+        <cbc:Name><![CDATA[ABC SOFTWARE CORP S.A.C.]]></cbc:Name>
+      </cac:PartyName>
+    </cac:SignatoryParty>
+    <cac:DigitalSignatureAttachment>
+      <cac:ExternalReference>
+        <cbc:URI>#SignABCSoftware</cbc:URI>
+      </cac:ExternalReference>
+    </cac:DigitalSignatureAttachment>
+  </cac:Signature>
+
+  <!-- [M-11, M-12, M-13] Datos del Emisor (ABC Software Corp) - Catálogo 06 = 6 (RUC) -->
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="6"
+                schemeName="Documento de Identidad"
+                schemeAgencyName="PE:SUNAT"
+                schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20555999113</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyName>
+        <cbc:Name><![CDATA[ABC DISTRIBUIDORA MAYORISTA Y MINORISTA]]></cbc:Name>
+      </cac:PartyName>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName><![CDATA[ABC SOFTWARE CORP S.A.C.]]></cbc:RegistrationName>
+        <cac:RegistrationAddress>
+          <cbc:ID schemeName="Ubigeos" schemeAgencyName="PE:INEI">150101</cbc:ID>
+          <cbc:AddressTypeCode listAgencyName="PE:SUNAT" listName="Establecimientos anexos">0000</cbc:AddressTypeCode>
+          <cac:AddressLine>
+            <cbc:Line><![CDATA[AV. NICOLÁS AYLLÓN 2450 - LIMA]]></cbc:Line>
+          </cac:AddressLine>
+          <cac:Country>
+            <cbc:IdentificationCode listID="ISO 3166-1" listName="Country">PE</cbc:IdentificationCode>
+          </cac:Country>
+        </cac:RegistrationAddress>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+
+  <!-- [M-14] Datos del Cliente Adquirente - Catálogo 06 = 6 (RUC Validado Módulo 11) -->
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="6"
+                schemeName="Documento de Identidad"
+                schemeAgencyName="PE:SUNAT"
+                schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo06">20601234561</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName><![CDATA[BODEGA Y ABARROTES SAN MARTÍN S.A.C.]]></cbc:RegistrationName>
+        <cac:RegistrationAddress>
+          <cbc:ID schemeName="Ubigeos" schemeAgencyName="PE:INEI">150101</cbc:ID>
+          <cac:AddressLine>
+            <cbc:Line><![CDATA[AV. GRAU 450, CERCADO DE LIMA]]></cbc:Line>
+          </cac:AddressLine>
+          <cac:Country>
+            <cbc:IdentificationCode listID="ISO 3166-1" listName="Country">PE</cbc:IdentificationCode>
+          </cac:Country>
+        </cac:RegistrationAddress>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+
+  <!-- [M-15] Condición de Pago (RS 193-2020/SUNAT) -->
+  <cac:PaymentTerms>
+    <cbc:ID>FormaPago</cbc:ID>
+    <cbc:PaymentMeansID>Contado</cbc:PaymentMeansID>
+  </cac:PaymentTerms>
+
+  <!-- [M-16 & M-17] Sumatoria Global de Impuestos (Catálogo 05: 1000=IGV, 2000=ISC, 7152=ICBPER, 9996=GRA) -->
+  <cac:TaxTotal>
+    <!-- Suma de IGV (285.79) + ISC (37.50) + ICBPER (1.00) = 324.29 -->
+    <cbc:TaxAmount currencyID="PEN">324.29</cbc:TaxAmount>
+
+    <!-- Subtotal Global IGV (1000): Base = 1400.00 (Arroz) + 187.50 (Gaseosa VV 150 + ISC 37.50) + 0.20 (Bolsas) = 1587.70 -->
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="PEN">1587.70</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="PEN">285.79</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier">S</cbc:ID>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">1000</cbc:ID>
+          <cbc:Name>IGV</cbc:Name>
+          <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+
+    <!-- Subtotal Global ISC (2000) -->
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="PEN">150.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="PEN">37.50</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier">S</cbc:ID>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">2000</cbc:ID>
+          <cbc:Name>ISC</cbc:Name>
+          <cbc:TaxTypeCode>EXC</cbc:TaxTypeCode>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+
+    <!-- Subtotal Global ICBPER (7152) -->
+    <cac:TaxSubtotal>
+      <cbc:TaxAmount currencyID="PEN">1.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">7152</cbc:ID>
+          <cbc:Name>ICBPER</cbc:Name>
+          <cbc:TaxTypeCode>OTH</cbc:TaxTypeCode>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+
+    <!-- Subtotal Global Operaciones Gratuitas / Bonificaciones (9996) -->
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="PEN">8.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="PEN">1.44</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID schemeID="UN/ECE 5305" schemeName="Tax Category Identifier">Z</cbc:ID>
+        <cac:TaxScheme>
+          <cbc:ID schemeID="UN/ECE 5153" schemeAgencyID="6">9996</cbc:ID>
+          <cbc:Name>GRA</cbc:Name>
+          <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+
+  <!-- [M-18] Totales Monetarios de la Factura -->
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="PEN">1550.20</cbc:LineExtensionAmount>
+    <cbc:TaxInclusiveAmount currencyID="PEN">1874.49</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="PEN">1874.49</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+
+  <!-- ========================================================================
+       LÍNEA 1: SACO DE ARROZ EXTRA X 50 KG (GRAVADO ONEROSO - CATÁLOGO 07 = 10)
+       ======================================================================== -->
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="BG"
+                          unitCodeListID="UN/ECE rec 20"
+                          unitCodeListAgencyName="United Nations Economic Commission for Europe">10.00</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="PEN">1400.00</cbc:LineExtensionAmount>
+    <cac:PricingReference>
+      <cac:AlternativeConditionPrice>
+        <cbc:PriceAmount currencyID="PEN">165.20</cbc:PriceAmount>
+        <cbc:PriceTypeCode listName="Tipo de Precio"
+                           listAgencyName="PE:SUNAT"
+                           listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+      </cac:AlternativeConditionPrice>
+    </cac:PricingReference>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="PEN">252.00</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">1400.00</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">252.00</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UN/ECE 5305">S</cbc:ID>
+          <cbc:Percent>18.00</cbc:Percent>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT"
+                                      listName="Afectacion del IGV"
+                                      listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+          <cac:TaxScheme>
+            <cbc:ID schemeID="UN/ECE 5153">1000</cbc:ID>
+            <cbc:Name>IGV</cbc:Name>
+            <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description><![CDATA[SACO DE ARROZ EXTRA X 50 KG]]></cbc:Description>
+      <cac:SellersItemIdentification>
+        <cbc:ID>AB-ARR-50KG</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:ItemClassificationCode listID="UNSPSC" listAgencyName="GS1 US" listName="Item Classification">50221101</cbc:ItemClassificationCode>
+      </cac:CommodityClassification>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="PEN">140.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+
+  <!-- ========================================================================
+       LÍNEA 2: PACK GASEOSA 3L X 6 UNID (CON ISC CATÁLOGO 08 = 01 + IGV 10)
+       ======================================================================== -->
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="PK"
+                          unitCodeListID="UN/ECE rec 20"
+                          unitCodeListAgencyName="United Nations Economic Commission for Europe">5.00</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="PEN">150.00</cbc:LineExtensionAmount>
+    <cac:PricingReference>
+      <cac:AlternativeConditionPrice>
+        <cbc:PriceAmount currencyID="PEN">44.25</cbc:PriceAmount>
+        <cbc:PriceTypeCode listName="Tipo de Precio"
+                           listAgencyName="PE:SUNAT"
+                           listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+      </cac:AlternativeConditionPrice>
+    </cac:PricingReference>
+    <cac:TaxTotal>
+      <!-- ISC (37.50) + IGV (33.75) = 71.25 -->
+      <cbc:TaxAmount currencyID="PEN">71.25</cbc:TaxAmount>
+      <!-- [L-07] Tributo 2000: ISC calculado bajo Catálogo 08 = 01 (Sistema al Valor 25%) -->
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">150.00</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">37.50</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UN/ECE 5305">S</cbc:ID>
+          <cbc:Percent>25.00</cbc:Percent>
+          <cbc:TierRange>01</cbc:TierRange>
+          <cac:TaxScheme>
+            <cbc:ID schemeID="UN/ECE 5153">2000</cbc:ID>
+            <cbc:Name>ISC</cbc:Name>
+            <cbc:TaxTypeCode>EXC</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+      <!-- Tributo 1000: IGV sobre (Valor Venta 150.00 + ISC 37.50 = 187.50) -->
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">187.50</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">33.75</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UN/ECE 5305">S</cbc:ID>
+          <cbc:Percent>18.00</cbc:Percent>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT"
+                                      listName="Afectacion del IGV"
+                                      listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+          <cac:TaxScheme>
+            <cbc:ID schemeID="UN/ECE 5153">1000</cbc:ID>
+            <cbc:Name>IGV</cbc:Name>
+            <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description><![CDATA[PACK GASEOSA 3 LITROS X 6 UNIDADES]]></cbc:Description>
+      <cac:SellersItemIdentification>
+        <cbc:ID>BEB-GAS-3L</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:ItemClassificationCode listID="UNSPSC" listAgencyName="GS1 US" listName="Item Classification">50202306</cbc:ItemClassificationCode>
+      </cac:CommodityClassification>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="PEN">30.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+
+  <!-- ========================================================================
+       LÍNEA 3: BOLSA PLÁSTICA GRANDE (AFECTA A ICBPER 7152 + IGV 10)
+       ======================================================================== -->
+  <cac:InvoiceLine>
+    <cbc:ID>3</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="NIU"
+                          unitCodeListID="UN/ECE rec 20"
+                          unitCodeListAgencyName="United Nations Economic Commission for Europe">2.00</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="PEN">0.20</cbc:LineExtensionAmount>
+    <cac:PricingReference>
+      <cac:AlternativeConditionPrice>
+        <cbc:PriceAmount currencyID="PEN">0.62</cbc:PriceAmount>
+        <cbc:PriceTypeCode listName="Tipo de Precio"
+                           listAgencyName="PE:SUNAT"
+                           listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">01</cbc:PriceTypeCode>
+      </cac:AlternativeConditionPrice>
+    </cac:PricingReference>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="PEN">1.04</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">0.20</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">0.04</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UN/ECE 5305">S</cbc:ID>
+          <cbc:Percent>18.00</cbc:Percent>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT"
+                                      listName="Afectacion del IGV"
+                                      listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">10</cbc:TaxExemptionReasonCode>
+          <cac:TaxScheme>
+            <cbc:ID schemeID="UN/ECE 5153">1000</cbc:ID>
+            <cbc:Name>IGV</cbc:Name>
+            <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+      <!-- [L-08] Tributo 7152: ICBPER (2 bolsas x S/ 0.50 = S/ 1.00) -->
+      <cac:TaxSubtotal>
+        <cbc:TaxAmount currencyID="PEN">1.00</cbc:TaxAmount>
+        <cbc:BaseUnitMeasure unitCode="NIU">2</cbc:BaseUnitMeasure>
+        <cac:TaxCategory>
+          <cbc:PerUnitAmount currencyID="PEN">0.50</cbc:PerUnitAmount>
+          <cac:TaxScheme>
+            <cbc:ID schemeID="UN/ECE 5153">7152</cbc:ID>
+            <cbc:Name>ICBPER</cbc:Name>
+            <cbc:TaxTypeCode>OTH</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description><![CDATA[BOLSA PLÁSTICA GRANDE BIODEGRADABLE]]></cbc:Description>
+      <cac:SellersItemIdentification>
+        <cbc:ID>BOL-PLAST-GDE</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:ItemClassificationCode listID="UNSPSC" listAgencyName="GS1 US" listName="Item Classification">24111503</cbc:ItemClassificationCode>
+      </cac:CommodityClassification>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="PEN">0.10</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+
+  <!-- ========================================================================
+       LÍNEA 4: BONIFICACIÓN GRATUITA POR VOLUMEN (ACEITE 1L - CAT. 07 = 15, TRIBUTO 9996)
+       ======================================================================== -->
+  <cac:InvoiceLine>
+    <cbc:ID>4</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="NIU"
+                          unitCodeListID="UN/ECE rec 20"
+                          unitCodeListAgencyName="United Nations Economic Commission for Europe">1.00</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="PEN">8.00</cbc:LineExtensionAmount>
+    <cac:PricingReference>
+      <cac:AlternativeConditionPrice>
+        <!-- [L-04] Catálogo 16 = 02 (Valor referencial unitario en operaciones no onerosas) -->
+        <cbc:PriceAmount currencyID="PEN">8.00</cbc:PriceAmount>
+        <cbc:PriceTypeCode listName="Tipo de Precio"
+                           listAgencyName="PE:SUNAT"
+                           listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16">02</cbc:PriceTypeCode>
+      </cac:AlternativeConditionPrice>
+    </cac:PricingReference>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="PEN">1.44</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">8.00</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">1.44</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:ID schemeID="UN/ECE 5305">Z</cbc:ID>
+          <cbc:Percent>18.00</cbc:Percent>
+          <cbc:TaxExemptionReasonCode listAgencyName="PE:SUNAT"
+                                      listName="Afectacion del IGV"
+                                      listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07">15</cbc:TaxExemptionReasonCode>
+          <cac:TaxScheme>
+            <cbc:ID schemeID="UN/ECE 5153">9996</cbc:ID>
+            <cbc:Name>GRA</cbc:Name>
+            <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description><![CDATA[BOTELLA ACEITE VEGETAL 1 LITRO - BONIFICACIÓN POR COMPRA MAYORISTA]]></cbc:Description>
+      <cac:SellersItemIdentification>
+        <cbc:ID>AB-ACE-1L</cbc:ID>
+      </cac:SellersItemIdentification>
+      <cac:CommodityClassification>
+        <cbc:ItemClassificationCode listID="UNSPSC" listAgencyName="GS1 US" listName="Item Classification">50151513</cbc:ItemClassificationCode>
+      </cac:CommodityClassification>
+    </cac:Item>
+    <cac:Price>
+      <!-- En transferencias gratuitas el PriceAmount es 0.00 -->
+      <cbc:PriceAmount currencyID="PEN">0.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

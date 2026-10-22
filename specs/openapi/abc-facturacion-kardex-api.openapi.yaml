@@ -1,0 +1,258 @@
+openapi: 3.1.0
+info:
+  title: ABC Software Corp — Facturación Electrónica UBL 2.1 & Kardex SUNAT API
+  version: 1.0.0-spec
+  description: >
+    Especificación formal de contratos de servicios (Spec-First) para emisión de
+    Comprobantes de Pago Electrónicos (OASIS UBL 2.1), validación tributaria SUNAT
+    (RS 097-2012, Anexo N.º 8, Catálogo 08 ISC), Kardex Formal (RS 234-2006 Formatos 12.1 y 13.1)
+    y migración con trazabilidad desde el sistema legado de almacén.
+  contact:
+    name: Equipo de Arquitectura — ABC Software Corp
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Motor Local Monolítico MVC (Windows .msi / Android .apk)
+  - url: https://api.abcsoftware.pe/api/v1
+    description: API Gateway Cloud (Evolución Hexagonal / Microservicios)
+
+tags:
+  - name: Facturación Electrónica UBL 2.1
+    description: Emisión de Facturas (01), Boletas (03), Notas de Crédito (07), Notas de Débito (08) y Bajas.
+  - name: Validaciones Tributarias SUNAT
+    description: Algoritmo Módulo 11, consulta de RUC/DNI y validación de catálogos Anexo N.º 8.
+  - name: Almacén, Kardex y Migración Legada
+    description: Migración de fichas históricas (fecha, ingreso, salida, producto, nro_documento) y libros 12.1 / 13.1.
+
+paths:
+  /cpe/documents:
+    post:
+      operationId: issueElectronicDocument
+      tags: [Facturación Electrónica UBL 2.1]
+      summary: Emite una Factura (01) o Boleta de Venta (03) bajo UBL 2.1 y registra salida en Kardex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/issue-cpe-command.schema.json'
+      responses:
+        '201':
+          description: Comprobante emitido, firmado con XAdES-BES, descontado en Kardex y aceptado por OSE/SUNAT.
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/cpe-emission-response.schema.json'
+        '202':
+          description: Comprobante firmado localmente y encolado en Contingencia Offline (QUEUED_OFFLINE).
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/cpe-emission-response.schema.json'
+        '422':
+          description: Error de validación de reglas de negocio o normativa SUNAT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainErrorResponse'
+
+  /cpe/notes:
+    post:
+      operationId: issueCreditOrDebitNote
+      tags: [Facturación Electrónica UBL 2.1]
+      summary: Emite una Nota de Crédito (07) o Nota de Débito (08) y ajusta el Kardex según Catálogo 09/10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/issue-cpe-command.schema.json'
+      responses:
+        '201':
+          description: Nota electrónica emitida, firmada y aceptada por OSE/SUNAT.
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/cpe-emission-response.schema.json'
+        '422':
+          description: Error de validación normativa (incongruencia de serie o motivo Catálogo 09/10).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainErrorResponse'
+
+  /cpe/voids:
+    post:
+      operationId: registerVoidCommunication
+      tags: [Facturación Electrónica UBL 2.1]
+      summary: Genera una Comunicación de Baja (RA) dentro del plazo máximo de 7 días calendario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoidCommunicationRequest'
+      responses:
+        '202':
+          description: Ticket de baja recepcionado por OSE/SUNAT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '422':
+          description: Plazo de 7 días excedido o documento ya anulado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainErrorResponse'
+
+  /cpe/sync-queue:
+    post:
+      operationId: syncOfflineContingencyQueue
+      tags: [Facturación Electrónica UBL 2.1]
+      summary: Sincroniza los comprobantes firmados que quedaron en estado QUEUED_OFFLINE
+      responses:
+        '200':
+          description: Resultado del lote de sincronización con OSE/SUNAT.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [totalProcessed, acceptedCount, rejectedCount]
+                properties:
+                  totalProcessed: { type: integer }
+                  acceptedCount: { type: integer }
+                  rejectedCount: { type: integer }
+
+  /taxpayers/ruc/{ruc}:
+    get:
+      operationId: validateRucAndLookup
+      tags: [Validaciones Tributarias SUNAT]
+      summary: Valida RUC con algoritmo Módulo 11 y consulta estado/condición en Padrón SUNAT
+      parameters:
+        - name: ruc
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{11}$'
+      responses:
+        '200':
+          description: RUC evaluado correctamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxpayerValidationResponse'
+
+  /inventory/migrations/legacy:
+    post:
+      operationId: migrateLegacyKardexRecords
+      tags: [Almacén, Kardex y Migración Legada]
+      summary: Migra y homologa las fichas del software básico (fecha, ingreso, salida, producto, nro_documento)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/legacy-migration-contract.schema.json'
+      responses:
+        '200':
+          description: Reporte de simulación (DRY_RUN) o confirmación de migración (COMMIT) con trazabilidad.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationReportResponse'
+
+  /inventory/kardex:
+    get:
+      operationId: getFormalKardexBook
+      tags: [Almacén, Kardex y Migración Legada]
+      summary: Obtiene el Kardex Formal SUNAT (Formato 12.1 Unidades Físicas / Formato 13.1 Valorizado)
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+        - name: sku
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Libro Kardex generado conforme a la RS N.º 234-2006/SUNAT.
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/kardex-formal-12-1-13-1.schema.json'
+
+components:
+  schemas:
+    VoidCommunicationRequest:
+      type: object
+      required: [voidDate, items]
+      properties:
+        voidDate: { type: string, format: date }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [documentTypeCode, series, correlative, voidReason]
+            properties:
+              documentTypeCode: { type: string, enum: ['01', '03', '07', '08'] }
+              series: { type: string }
+              correlative: { type: integer }
+              voidReason: { type: string, minLength: 5, maxLength: 100 }
+
+    TicketResponse:
+      type: object
+      required: [ticketNumber, identifier, status]
+      properties:
+        ticketNumber: { type: string, example: "20260098712345" }
+        identifier: { type: string, example: "RA-20261022-1" }
+        status: { type: string, enum: [PROCESSING, ACCEPTED, REJECTED] }
+
+    TaxpayerValidationResponse:
+      type: object
+      required: [ruc, isValidMod11, taxpayerState, domicileCondition, legalName]
+      properties:
+        ruc: { type: string }
+        isValidMod11: { type: boolean }
+        taxpayerState: { type: string, enum: [ACTIVO, BAJA_DE_OFICIO, SUSPENSION_TEMPORAL, BAJA_DEFINITIVA] }
+        domicileCondition: { type: string, enum: [HABIDO, NO_HABIDO, PENDIENTE] }
+        legalName: { type: string }
+        ubigeo: { type: string }
+        address: { type: string }
+
+    MigrationReportResponse:
+      type: object
+      required: [batchId, executionMode, totalRead, totalMigrated, unmappedProducts, negativeStockAlerts, auditTrail]
+      properties:
+        batchId: { type: string, format: uuid }
+        executionMode: { type: string, enum: [DRY_RUN, COMMIT] }
+        totalRead: { type: integer }
+        totalMigrated: { type: integer }
+        unmappedProducts: { type: array, items: { type: string } }
+        negativeStockAlerts: { type: array, items: { type: string } }
+        auditTrail:
+          type: array
+          items:
+            type: object
+            required: [legacyRowId, legacyDocNumber, assignedKardexId, assignedFormalNumber, sha256Hash]
+            properties:
+              legacyRowId: { type: string }
+              legacyDocNumber: { type: string }
+              assignedKardexId: { type: string, format: uuid }
+              assignedFormalNumber: { type: string, example: "MIG01-00000102" }
+              sha256Hash: { type: string }
+
+    DomainErrorResponse:
+      type: object
+      required: [errorCode, sunatEquivalentCode, message, normativeReference]
+      properties:
+        errorCode: { type: string, example: "ERR_RUC_MOD11_INVALID" }
+        sunatEquivalentCode: { type: string, example: "2017" }
+        message: { type: string }
+        normativeReference: { type: string, example: "RS N.º 097-2012/SUNAT - Anexo N.º 8 - Catálogo 06" }
