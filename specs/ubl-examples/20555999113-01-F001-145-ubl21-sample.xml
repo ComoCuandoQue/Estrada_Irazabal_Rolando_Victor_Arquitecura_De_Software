@@ -30,10 +30,10 @@
                 <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
               </ds:Transforms>
               <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
-              <ds:DigestValue>x7K9pL2mQ8vR4tY6wZ1nB3cV5xZ8=</ds:DigestValue>
+              <ds:DigestValue>47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=</ds:DigestValue>
             </ds:Reference>
           </ds:SignedInfo>
-          <ds:SignatureValue>MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7...</ds:SignatureValue>
+          <ds:SignatureValue>MIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MIIEpAIBAAKCAQEA</ds:SignatureValue>
         </ds:Signature>
       </ext:ExtensionContent>
     </ext:UBLExtension>
