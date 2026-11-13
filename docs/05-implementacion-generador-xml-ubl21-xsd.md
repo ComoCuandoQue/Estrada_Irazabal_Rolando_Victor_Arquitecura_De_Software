@@ -115,13 +115,27 @@ Desde la raíz del repositorio, ejecuta:
 python -m src.demo_generate_and_validate
 ```
 
-Este comando ejecuta **3 escenarios completos de ABC Software Corp**, genera los archivos XML en la carpeta [`output/`](../output/) y los valida en tiempo real contra `xsd/maindoc/UBL-Invoice-2.1.xsd`:
-- **Escenario 1 (`20555999113-01-F001-00000145.xml`)**: Factura Mayorista al Contado con Arroz Extra (Gravado `10`), Pack de Gaseosas (afecto a **ISC Catálogo 08 = `01` Sistema al Valor** + IGV), Bolsas Plásticas (**ICBPER `7152`**) y Botella de Aceite en **Bonificación Gratuita (`Catálogo 07 = 15`, Tributo `9996`)**.
-- **Escenario 2 (`20555999113-01-F001-00000146.xml`)**: Factura Mayorista al **Crédito en 3 Cuotas** (RS N.º 193-2020/SUNAT) con Licores afectos a **ISC Catálogo 08 = `02` (Monto Fijo)** y Bebidas afectas a **ISC Catálogo 08 = `03` (Precio de Venta al Público)**.
-- **Escenario 3 (`20555999113-03-B001-00000890.xml`)**: Boleta de Venta Minorista con productos gravados y exonerados (`Catálogo 07 = 20`, Tributo `9997`).
+Este comando ejecuta **4 escenarios completos de ABC Software Corp**, genera los archivos XML firmados criptográficamente con `RSA-SHA256` + Certificado `X.509` en la carpeta [`output/`](../output/) y los valida en tiempo real contra `xsd/maindoc/UBL-Invoice-2.1.xsd`:
+- **Escenario 1 ([`output/20555999110-01-F001-145.xml`](../output/20555999110-01-F001-145.xml))**: Factura Mayorista al Contado con Arroz Extra (Gravado `10`), Pack de Gaseosas (afecto a **ISC Catálogo 08 = `01` Sistema al Valor** + IGV), Bolsas Plásticas (**ICBPER `7152`**) y Botella de Aceite en **Bonificación Gratuita (`Catálogo 07 = 15`, Tributo `9996`)**.
+- **Escenario 2 ([`output/20555999110-01-F001-146.xml`](../output/20555999110-01-F001-146.xml))**: Factura Mayorista al **Crédito en 2 Cuotas** (RS N.º 193-2020/SUNAT) con Licores afectos a **ISC Catálogo 08 = `02` (Monto Fijo)** y Cervezas afectas a **ISC Catálogo 08 = `03` (Precio de Venta al Público)**.
+- **Escenario 3 ([`output/20555999110-03-B001-890.xml`](../output/20555999110-03-B001-890.xml))**: Boleta de Venta Minorista con DNI, productos gravados y exonerados (`Catálogo 07 = 20`, Tributo `9997`).
+- **Escenario 4 ([`output/20600695771-01-F001-145.xml`](../output/20600695771-01-F001-145.xml))**: Factura homologada para pruebas en vivo en **`https://probar-xml.nubefact.com/`**, cuya Constancia de Recepción oficial (**CDR `ResponseCode = 0`**) se conserva en [`output/R-20600695771-01-F001-145-cdr-sunat.xml`](../output/R-20600695771-01-F001-145-cdr-sunat.xml).
 
 ### 2. Ejecutar la Suite de Pruebas Automatizadas (Unitarias + Validación XSD)
 
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+---
+
+## 5.4 Verificación Externa en Vivo (`https://probar-xml.nubefact.com/`) y Reglas Superadas
+
+El XML generado fue sometido al validador en línea de **Nubefact / SUNAT (`https://probar-xml.nubefact.com/`)**, superando las siguientes validaciones normativas:
+
+| Código Regla SUNAT / OSE | Descripción de la Validación | Cumplimiento en Nuestro Motor |
+| :---: | :--- | :--- |
+| **Regla `0306`** | El elemento `ext:ExtensionContent` debe contener obligatoriamente la firma digital `ds:Signature` con `ds:KeyInfo/ds:X509Data/ds:X509Certificate`. | Implementado en [`ubl21_xml_generator.py`](../src/infrastructure_adapters/ubl21_xml_generator.py) mediante canonización W3C `C14N`, firma `RSA-SHA256` y certificado `X.509` real. |
+| **Regla `3292`** | En líneas de transferencia gratuita/bonificación (`9996`), el nodo `cac:InvoiceLine/cac:TaxTotal/cbc:TaxAmount` debe ser `0.00`, mientras que `cac:TaxSubtotal/cbc:TaxAmount` conserva el tributo referencial. | Implementado en [`tax_engine.py`](../src/core_model/domain/tax_engine.py). |
+| **Regla `3277`** | En el subtotal global de IGV (`1000`), `cbc:TaxableAmount` debe ser igual a la sumatoria de `cbc:LineExtensionAmount` de las líneas gravadas (`1550.20`), mientras que `cbc:TaxAmount` aplica el `18%` sobre `ValorVenta + ISC` (`285.79`). | Implementado en [`tax_engine.py`](../src/core_model/domain/tax_engine.py). |
+| **CDR `ResponseCode = 0`** | Emisión de Constancia de Recepción `<ar:ApplicationResponse>` aceptada sin observaciones. | Evidencia almacenada en [`output/R-20600695771-01-F001-145-cdr-sunat.xml`](../output/R-20600695771-01-F001-145-cdr-sunat.xml): *"La Factura numero F001-145, ha sido aceptada"*. |
