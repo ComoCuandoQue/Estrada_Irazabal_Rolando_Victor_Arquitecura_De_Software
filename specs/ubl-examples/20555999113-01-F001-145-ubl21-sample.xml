@@ -406,7 +406,7 @@
       </cac:AlternativeConditionPrice>
     </cac:PricingReference>
     <cac:TaxTotal>
-      <cbc:TaxAmount currencyID="PEN">1.44</cbc:TaxAmount>
+      <cbc:TaxAmount currencyID="PEN">0.00</cbc:TaxAmount>
       <cac:TaxSubtotal>
         <cbc:TaxableAmount currencyID="PEN">8.00</cbc:TaxableAmount>
         <cbc:TaxAmount currencyID="PEN">1.44</cbc:TaxAmount>

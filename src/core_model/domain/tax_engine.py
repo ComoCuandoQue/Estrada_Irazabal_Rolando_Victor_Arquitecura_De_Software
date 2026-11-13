@@ -62,7 +62,7 @@ class SunatTaxCalculationEngine:
                 alternative_condition_price=round2(ref_unit),
                 line_extension_amount=line_ext,
                 discount_amount=Decimal("0.00"),
-                total_line_tax_amount=free_tax,
+                total_line_tax_amount=Decimal("0.00"),
                 tax_subtotals=subtotals,
                 is_free_operation=True,
             )
