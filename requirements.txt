@@ -1,0 +1,4 @@
+# Dependencias oficiales para generación XML UBL 2.1, validación XSD OASIS y firma criptográfica X.509 (XMLDSig)
+lxml>=5.0.0
+cryptography>=42.0.0
+xmlschema>=3.0.0

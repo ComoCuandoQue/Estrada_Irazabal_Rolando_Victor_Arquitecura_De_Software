@@ -77,15 +77,98 @@ flowchart LR
 
 ---
 
-## 🚀 Cómo Ejecutar el Generador XML y Validador XSD
+## 🚀 Guía Paso a Paso desde Cero: Cómo Ejecutar el Generador XML y Validador XSD
+
+Cualquier persona puede reproducir la generación de comprobantes UBL 2.1 y su validación contra `UBL-Invoice-2.1.xsd` siguiendo estos pasos desde cero:
+
+### Paso 0: Requisitos Previos (Programas Necesarios)
+Necesitas tener instalado **Python 3.10 o superior** (incluye `pip`) y opcionalmente **Git**:
+- **Verificar si ya tienes Python**: Abre **PowerShell** o **CMD** y ejecuta `python --version`.
+- **Si no tienes Python instalado en Windows**:
+  - Instálalo desde [python.org/downloads](https://www.python.org/downloads/) (marcando la casilla **"Add python.exe to PATH"** al instalar), o ejecuta en PowerShell:
+    ```powershell
+    winget install -e --id Python.Python.3.12
+    ```
+- **Si no tienes Git instalado en Windows** *(opcional)*:
+  ```powershell
+  winget install -e --id Git.Git
+  ```
+
+---
+
+### Paso 1: Obtener el Proyecto (Clonar con Git o Descargar ZIP)
+
+**Opción A — Clonando con Git (Recomendado):**
+```bash
+git clone https://github.com/ComoCuandoQue/Estrada_Irazabal_Rolando_Victor_Arquitecura_De_Software.git
+cd Estrada_Irazabal_Rolando_Victor_Arquitecura_De_Software
+```
+
+**Opción B — Sin usar Git (Descarga directa):**
+1. En la página de GitHub del repositorio, haz clic en el botón verde **`<> Code`** $\rightarrow$ **`Download ZIP`**.
+2. Descomprime el archivo `.zip` en tu computadora.
+3. Abre una terminal (**PowerShell** o **CMD**) dentro de la carpeta descomprimida.
+
+---
+
+### Paso 2: Crear Entorno Virtual (Opcional) e Instalar Librerías (`requirements.txt`)
+
+El motor utiliza tres librerías de Python listadas en [`requirements.txt`](./requirements.txt):
+- `lxml`: Construcción DOM/XML, canonización W3C C14N y motor validador `XMLSchema` contra `UBL-Invoice-2.1.xsd`.
+- `cryptography`: Generación de llaves RSA-2048, certificados digitales X.509 y firma criptográfica `RSA-SHA256` (`ds:Signature`).
+- `xmlschema`: Soporte complementario de inspección de esquemas XSD 1.0/1.1.
+
+Ejecuta en tu terminal:
+
+```powershell
+# (Opcional) Crear y activar un entorno virtual limpio en Windows:
+python -m venv .venv
+.\.venv\Scripts\activate
+
+# Instalar todas las dependencias necesarias:
+pip install -r requirements.txt
+```
+*(O si prefieres instalarlas directamente en una sola línea: `pip install lxml cryptography xmlschema`)*
+
+---
+
+### Paso 3: Ejecutar el Generador de XML UBL 2.1 y Validador `UBL-Invoice-2.1.xsd`
+
+Desde la carpeta raíz del proyecto, ejecuta:
 
 ```bash
-# 1. Instalar dependencias de validación XSD
-pip install lxml xmlschema
-
-# 2. Ejecutar la demostración de generación y validación contra UBL-Invoice-2.1.xsd
 python -m src.demo_generate_and_validate
+```
 
-# 3. Ejecutar la suite de pruebas automatizadas
+**¿Qué hace este comando automáticamente?**
+1. Carga el esquema oficial [`xsd/maindoc/UBL-Invoice-2.1.xsd`](./xsd/maindoc/UBL-Invoice-2.1.xsd) y sus 14 esquemas `xsd/common/*.xsd`.
+2. Valida los RUCs mediante el **Algoritmo Módulo 11** de SUNAT.
+3. Calcula los impuestos (**IGV 18%**, **Catálogo 08 de ISC** \[`01` Al Valor, `02` Monto Fijo, `03` PVP\], **ICBPER `7152`** y **Bonificaciones Gratuitas `9996`**).
+4. Genera los archivos XML en la carpeta [`output/`](./output/), los firma digitalmente con `RSA-SHA256` + Certificado `X.509` y los valida contra `UBL-Invoice-2.1.xsd`, mostrando en consola:
+   ```text
+   [Escenario 1] Archivo Generado : output/20555999110-01-F001-145.xml
+     - Validacion XSD OASIS  : CONFORME: El documento XML cumple al 100% con el esquema OASIS UBL-Invoice-2.1.xsd
+   ```
+
+---
+
+### Paso 4: Ejecutar la Suite de Pruebas Unitarias y de Integración XSD
+
+Para correr los 4 tests automatizados que verifican el motor tributario y la validación XSD:
+
+```bash
 python -m unittest discover -s tests -v
 ```
+Verás al final: `Ran 4 tests ... OK`.
+
+---
+
+### Paso 5: Cómo Comprobar el XML en Vivo en `https://probar-xml.nubefact.com/`
+
+1. Abre el archivo generado [`output/20600695771-01-F001-145.xml`](./output/20600695771-01-F001-145.xml) y copia todo su contenido.
+2. Ingresa a **[https://probar-xml.nubefact.com/](https://probar-xml.nubefact.com/)** y pega el XML en el editor izquierdo (**"Pega o Arrastra tu xml"**).
+3. **Para probar con `SUNAT`**:
+   - En la lista desplegable central selecciona **`SUNAT`** y haz clic en **`Enviar`**.
+   - En el panel derecho recibirás la Constancia de Recepción (`<ar:ApplicationResponse>`) con `<cbc:ResponseCode>0</cbc:ResponseCode>` y `<cbc:Description>La Factura numero F001-145, ha sido aceptada</cbc:Description>` (cuya copia está guardada en [`output/R-20600695771-01-F001-145-cdr-sunat.xml`](./output/R-20600695771-01-F001-145-cdr-sunat.xml)).
+4. **Para probar con `OSE`**:
+   - Como el correlativo `F001-145` ya fue registrado en nuestra prueba previa (lo que devuelve `Código 1033: El comprobante fue registrado previamente`), cambia únicamente la línea `<cbc:ID>F001-145</cbc:ID>` por un correlativo nuevo (ej. `<cbc:ID>F001-98765</cbc:ID>`), asegúrate de que `<cbc:IssueDate>` tenga la fecha del día actual, marca **`Firmar`** y haz clic en **`Enviar`**.

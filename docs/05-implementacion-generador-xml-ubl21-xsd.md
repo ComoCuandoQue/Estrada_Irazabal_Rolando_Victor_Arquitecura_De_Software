@@ -106,9 +106,27 @@ flowchart LR
 
 ---
 
-## 5.3 Ejecución de la Demostración y Suite de Pruebas
+## 5.3 Guía Paso a Paso desde Cero: Instalación, Ejecución y Pruebas
 
-### 1. Ejecutar el Generador y Validador Interactivo
+### Paso 0: Requisitos Previos
+- **Python 3.10 o superior** instalado en el sistema (`python --version`).
+  - En Windows puede instalarse desde [python.org](https://www.python.org/downloads/) o ejecutando `winget install -e --id Python.Python.3.12`.
+- **Git** (opcional, también se puede descargar el repositorio como archivo `.zip` desde GitHub).
+
+### Paso 1: Clonar el Repositorio e Ingresar a la Carpeta
+```bash
+git clone https://github.com/ComoCuandoQue/Estrada_Irazabal_Rolando_Victor_Arquitecura_De_Software.git
+cd Estrada_Irazabal_Rolando_Victor_Arquitecura_De_Software
+```
+
+### Paso 2: Instalar las Dependencias (`requirements.txt`)
+El proyecto incluye el archivo [`requirements.txt`](../requirements.txt) con las 3 librerías requeridas (`lxml` para construcción y validación XSD, `cryptography` para la firma digital RSA-SHA256 X.509 y `xmlschema`):
+```bash
+pip install -r requirements.txt
+```
+*(O directamente: `pip install lxml cryptography xmlschema`)*
+
+### Paso 3: Ejecutar el Generador y Validador Interactivo
 Desde la raíz del repositorio, ejecuta:
 
 ```bash
@@ -121,7 +139,7 @@ Este comando ejecuta **4 escenarios completos de ABC Software Corp**, genera los
 - **Escenario 3 ([`output/20555999110-03-B001-890.xml`](../output/20555999110-03-B001-890.xml))**: Boleta de Venta Minorista con DNI, productos gravados y exonerados (`Catálogo 07 = 20`, Tributo `9997`).
 - **Escenario 4 ([`output/20600695771-01-F001-145.xml`](../output/20600695771-01-F001-145.xml))**: Factura homologada para pruebas en vivo en **`https://probar-xml.nubefact.com/`**, cuya Constancia de Recepción oficial (**CDR `ResponseCode = 0`**) se conserva en [`output/R-20600695771-01-F001-145-cdr-sunat.xml`](../output/R-20600695771-01-F001-145-cdr-sunat.xml).
 
-### 2. Ejecutar la Suite de Pruebas Automatizadas (Unitarias + Validación XSD)
+### Paso 4: Ejecutar la Suite de Pruebas Automatizadas (Unitarias + Validación XSD)
 
 ```bash
 python -m unittest discover -s tests -v
