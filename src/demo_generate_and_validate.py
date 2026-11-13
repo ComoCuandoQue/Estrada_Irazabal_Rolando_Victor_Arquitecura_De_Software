@@ -222,7 +222,42 @@ def run_demo() -> None:
         items=items_3,
     )
 
-    for idx, art in enumerate([art_1, art_2, art_3], start=1):
+    # -------------------------------------------------------------------------
+    # ESCENARIO 4: Factura con RUC Demo Nubefact (20600695771) Firmada Criptográficamente
+    # -------------------------------------------------------------------------
+    nubefact_supplier = PartyInfo(
+        identity_doc_type_cat06="6",
+        identity_doc_number="20600695771",
+        legal_name="ABC SOFTWARE CORP S.A.C.",
+        trade_name="ABC DISTRIBUIDORA MAYORISTA Y MINORISTA DE ABARROTES",
+        ubigeo_cat13="150101",
+        establishment_code="0000",
+        address_line="AV. NICOLAS AYLLON 2450 - LIMA",
+        country_code="PE",
+    )
+    real_customer = PartyInfo(
+        identity_doc_type_cat06="6",
+        identity_doc_number="20100070970",
+        legal_name="SUPERMERCADOS PERUANOS SOCIEDAD ANONIMA",
+        ubigeo_cat13="150130",
+        address_line="CAL. MORELLI NRO. 181 SAN BORJA - LIMA",
+    )
+    art_4 = controller.issue_and_export_xml(
+        output_dir=output_dir,
+        document_type_cat01="01",
+        operation_type_cat51="0101",
+        series="F001",
+        correlative=145,
+        issue_date="2026-11-12",
+        issue_time="10:30:00",
+        currency_code_cat02="PEN",
+        supplier=nubefact_supplier,
+        customer=real_customer,
+        payment_terms=PaymentTermsInfo(condition="Contado"),
+        items=items_1,
+    )
+
+    for idx, art in enumerate([art_1, art_2, art_3, art_4], start=1):
         print(f"\n[Escenario {idx}] Archivo Generado : output/{art.xml_filename}")
         print(f"  - Comprobante / Cliente : {art.document.full_id} -> {art.document.customer.legal_name}")
         print(f"  - Valor Venta Total     : S/ {art.document.legal_monetary_total.line_extension_amount:.2f}")

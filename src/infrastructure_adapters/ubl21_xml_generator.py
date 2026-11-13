@@ -1,12 +1,17 @@
 """
-Adaptador de Infraestructura: Generador de XML conforme a OASIS UBL-Invoice-2.1.xsd y Anexo N.º 8 SUNAT.
-Implementa el puerto IUblInvoiceXmlGeneratorPort respetando estrictamente el <xs:sequence> de OASIS.
+Adaptador de Infraestructura: Generador de XML conforme a OASIS UBL-Invoice-2.1.xsd y Anexo N.º 8 SUNAT,
+con Firma Digital Criptográfica Real W3C XMLDSig (RSA-SHA256 + C14N + Certificado X.509).
 """
 
 import base64
+import datetime
 import hashlib
 from decimal import Decimal
 from typing import Tuple
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.x509.oid import NameOID
 from lxml import etree
 
 from ..core_model.application.ports import IUblInvoiceXmlGeneratorPort
@@ -36,53 +41,45 @@ def qn(ns: str, tag: str) -> str:
 
 
 class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
-    """Construye el árbol XML UBL 2.1 cumpliendo cada XPath y atributo del Anexo N.º 8 de SUNAT."""
+    """Construye el árbol XML UBL 2.1 y lo firma criptográficamente con XMLDSig (RSA-SHA256 + X.509)."""
+
+    def __init__(self) -> None:
+        self._private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+    def _build_x509_certificate_b64(self, ruc: str, legal_name: str) -> Tuple[str, str]:
+        """Genera un certificado X.509 v3 para firmar el XML bajo el estándar XMLDSig de SUNAT."""
+        subject_str = f"C=PE,O={legal_name},OU={ruc},CN={legal_name}"
+        subject = issuer = x509.Name(
+            [
+                x509.NameAttribute(NameOID.COUNTRY_NAME, "PE"),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, legal_name[:64]),
+                x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, ruc),
+                x509.NameAttribute(NameOID.COMMON_NAME, legal_name[:64]),
+            ]
+        )
+        now = datetime.datetime.now(datetime.timezone.utc)
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(self._private_key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - datetime.timedelta(days=365))
+            .not_valid_after(now + datetime.timedelta(days=1095))
+            .sign(self._private_key, hashes.SHA256())
+        )
+        der_bytes = cert.public_bytes(serialization.Encoding.DER)
+        return subject_str, base64.b64encode(der_bytes).decode("ascii")
 
     def generate_invoice_xml(
         self, doc: ElectronicInvoiceDocument
     ) -> Tuple[str, str, str]:
         root = etree.Element(qn(NS_INVOICE, "Invoice"), nsmap=NSMAP)
 
-        # Hash determinista SHA-256 sobre el identificador y totales del documento (simulación XAdES-BES)
-        canonical_seed = (
-            f"{doc.supplier.identity_doc_number}|{doc.document_type_cat01}|{doc.full_id}|"
-            f"{doc.global_tax_total_amount:.2f}|{doc.legal_monetary_total.payable_amount:.2f}|"
-            f"{doc.issue_date}|{doc.customer.identity_doc_type_cat06}|{doc.customer.identity_doc_number}"
-        )
-        digest_bytes = hashlib.sha256(canonical_seed.encode("utf-8")).digest()
-        digest_b64 = base64.b64encode(digest_bytes).decode("ascii")
-        sig_value_b64 = base64.b64encode(hashlib.sha512(digest_bytes).digest()).decode("ascii")
-
-        # 1. ext:UBLExtensions (Contenedor obligatorio de Firma Digital XAdES-BES)
+        # 1. ext:UBLExtensions (Se deja listo el contenedor ext:ExtensionContent para la firma C14N)
         ubl_exts = etree.SubElement(root, qn(NS_EXT, "UBLExtensions"))
         ubl_ext = etree.SubElement(ubl_exts, qn(NS_EXT, "UBLExtension"))
         ext_content = etree.SubElement(ubl_ext, qn(NS_EXT, "ExtensionContent"))
-        ds_sig = etree.SubElement(ext_content, qn(NS_DS, "Signature"), Id="SignABCSoftware")
-        signed_info = etree.SubElement(ds_sig, qn(NS_DS, "SignedInfo"))
-        etree.SubElement(
-            signed_info,
-            qn(NS_DS, "CanonicalizationMethod"),
-            Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
-        )
-        etree.SubElement(
-            signed_info,
-            qn(NS_DS, "SignatureMethod"),
-            Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
-        )
-        ds_ref = etree.SubElement(signed_info, qn(NS_DS, "Reference"), URI="")
-        transforms = etree.SubElement(ds_ref, qn(NS_DS, "Transforms"))
-        etree.SubElement(
-            transforms,
-            qn(NS_DS, "Transform"),
-            Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature",
-        )
-        etree.SubElement(
-            ds_ref,
-            qn(NS_DS, "DigestMethod"),
-            Algorithm="http://www.w3.org/2001/04/xmlenc#sha256",
-        )
-        etree.SubElement(ds_ref, qn(NS_DS, "DigestValue")).text = digest_b64
-        etree.SubElement(ds_sig, qn(NS_DS, "SignatureValue")).text = sig_value_b64
 
         # 2. cbc:UBLVersionID & 3. cbc:CustomizationID
         etree.SubElement(root, qn(NS_CBC, "UBLVersionID")).text = "2.1"
@@ -138,9 +135,9 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
         )
         sig_attach = etree.SubElement(cac_sig, qn(NS_CAC, "DigitalSignatureAttachment"))
         ext_ref = etree.SubElement(sig_attach, qn(NS_CAC, "ExternalReference"))
-        etree.SubElement(ext_ref, qn(NS_CBC, "URI")).text = "#SignABCSoftware"
+        etree.SubElement(ext_ref, qn(NS_CBC, "URI")).text = "#SignatureSP"
 
-        # 12. cac:AccountingSupplierParty (Emisor — ABC Software Corp)
+        # 12. cac:AccountingSupplierParty (Emisor)
         sup_container = etree.SubElement(root, qn(NS_CAC, "AccountingSupplierParty"))
         sup_party = etree.SubElement(sup_container, qn(NS_CAC, "Party"))
         sup_ident = etree.SubElement(sup_party, qn(NS_CAC, "PartyIdentification"))
@@ -217,7 +214,7 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
             listName="Country",
         ).text = doc.customer.country_code
 
-        # 14. cac:PaymentTerms (RS N.º 193-2020/SUNAT — Contado o Crédito con Cuotas)
+        # 14. cac:PaymentTerms (RS N.º 193-2020/SUNAT)
         pt_main = etree.SubElement(root, qn(NS_CAC, "PaymentTerms"))
         etree.SubElement(pt_main, qn(NS_CBC, "ID")).text = "FormaPago"
         etree.SubElement(pt_main, qn(NS_CBC, "PaymentMeansID")).text = (
@@ -269,15 +266,65 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
         for line in doc.lines:
             self._append_invoice_line(root, line, doc.currency_code_cat02)
 
-        xml_bytes = etree.tostring(
-            root,
-            pretty_print=True,
-            xml_declaration=True,
-            encoding="UTF-8",
-        )
-        xml_str = xml_bytes.decode("utf-8")
+        # Indentar el documento ANTES de calcular la firma C14N para que el DigestValue sea exacto byte a byte
+        etree.indent(root, space="  ")
 
-        # Cadena oficial SUNAT para el Código QR
+        # Calcular DigestValue SHA-256 real sobre la forma canónica C14N del documento sin ds:Signature
+        c14n_unsigned = etree.tostring(root, method="c14n", exclusive=False, with_comments=False)
+        digest_bytes = hashlib.sha256(c14n_unsigned).digest()
+        digest_b64 = base64.b64encode(digest_bytes).decode("ascii")
+
+        # Construir el nodo ds:Signature dentro de ext:ExtensionContent
+        ds_sig = etree.SubElement(ext_content, qn(NS_DS, "Signature"), Id="SignatureSP")
+        signed_info = etree.SubElement(ds_sig, qn(NS_DS, "SignedInfo"))
+        etree.SubElement(
+            signed_info,
+            qn(NS_DS, "CanonicalizationMethod"),
+            Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+        )
+        etree.SubElement(
+            signed_info,
+            qn(NS_DS, "SignatureMethod"),
+            Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+        )
+        ds_ref = etree.SubElement(signed_info, qn(NS_DS, "Reference"), URI="")
+        transforms = etree.SubElement(ds_ref, qn(NS_DS, "Transforms"))
+        etree.SubElement(
+            transforms,
+            qn(NS_DS, "Transform"),
+            Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature",
+        )
+        etree.SubElement(
+            ds_ref,
+            qn(NS_DS, "DigestMethod"),
+            Algorithm="http://www.w3.org/2001/04/xmlenc#sha256",
+        )
+        etree.SubElement(ds_ref, qn(NS_DS, "DigestValue")).text = digest_b64
+
+        # Firmar criptográficamente el nodo ds:SignedInfo con RSA-SHA256
+        c14n_signed_info = etree.tostring(
+            signed_info, method="c14n", exclusive=False, with_comments=False
+        )
+        signature_bytes = self._private_key.sign(
+            c14n_signed_info,
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+        sig_value_b64 = base64.b64encode(signature_bytes).decode("ascii")
+        etree.SubElement(ds_sig, qn(NS_DS, "SignatureValue")).text = sig_value_b64
+
+        # Agregar ds:KeyInfo con ds:X509Data y ds:X509Certificate real (exigido por SUNAT y OSE)
+        subject_str, cert_b64 = self._build_x509_certificate_b64(
+            doc.supplier.identity_doc_number, doc.supplier.legal_name
+        )
+        key_info = etree.SubElement(ds_sig, qn(NS_DS, "KeyInfo"))
+        x509_data = etree.SubElement(key_info, qn(NS_DS, "X509Data"))
+        etree.SubElement(x509_data, qn(NS_DS, "X509SubjectName")).text = subject_str
+        etree.SubElement(x509_data, qn(NS_DS, "X509Certificate")).text = cert_b64
+
+        xml_body = etree.tostring(root, encoding="UTF-8").decode("utf-8")
+        xml_str = f'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n{xml_body}'
+
         igv_amount = next(
             (s.tax_amount for s in doc.global_tax_subtotals if s.tax_scheme_id_cat05 == "1000"),
             Decimal("0.00"),
@@ -298,7 +345,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
         currency_code: str,
         is_line_level: bool,
     ) -> None:
-        """Agrega un nodo cac:TaxSubtotal respetando la secuencia de UBL-CommonAggregateComponents-2.1.xsd."""
         sub_el = etree.SubElement(parent_tax_total, qn(NS_CAC, "TaxSubtotal"))
         if sub.taxable_amount is not None:
             etree.SubElement(
@@ -337,7 +383,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
                     listName="Afectacion del IGV",
                     listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07",
                 ).text = sub.tax_exemption_reason_cat07
-            # PUNTO CLAVE: Catálogo 08 de SUNAT (Sistemas de Cálculo del ISC) en cbc:TierRange
             if sub.tier_range_cat08 is not None:
                 etree.SubElement(cat_el, qn(NS_CBC, "TierRange")).text = sub.tier_range_cat08
 
@@ -354,7 +399,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
         line: CalculatedInvoiceLine,
         currency_code: str,
     ) -> None:
-        """Agrega un nodo cac:InvoiceLine respetando la secuencia exacta de UBL-Invoice-2.1.xsd."""
         line_el = etree.SubElement(root, qn(NS_CAC, "InvoiceLine"))
         etree.SubElement(line_el, qn(NS_CBC, "ID")).text = str(line.line_number)
         etree.SubElement(
@@ -368,7 +412,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
             line_el, qn(NS_CBC, "LineExtensionAmount"), currencyID=currency_code
         ).text = f"{line.line_extension_amount:.2f}"
 
-        # cac:PricingReference (Catálogo 16: '01'=Precio con IGV, '02'=Valor referencial gratuito)
         pricing_ref = etree.SubElement(line_el, qn(NS_CAC, "PricingReference"))
         alt_price = etree.SubElement(pricing_ref, qn(NS_CAC, "AlternativeConditionPrice"))
         etree.SubElement(
@@ -382,7 +425,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
             listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo16",
         ).text = line.price_type_code_cat16
 
-        # cac:AllowanceCharge (Descuento de línea si existe)
         if line.discount_amount > Decimal("0.00"):
             ac_el = etree.SubElement(line_el, qn(NS_CAC, "AllowanceCharge"))
             etree.SubElement(ac_el, qn(NS_CBC, "ChargeIndicator")).text = "false"
@@ -391,7 +433,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
                 ac_el, qn(NS_CBC, "Amount"), currencyID=currency_code
             ).text = f"{line.discount_amount:.2f}"
 
-        # cac:TaxTotal de la línea
         line_tax_el = etree.SubElement(line_el, qn(NS_CAC, "TaxTotal"))
         etree.SubElement(
             line_tax_el, qn(NS_CBC, "TaxAmount"), currencyID=currency_code
@@ -399,7 +440,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
         for sub in line.tax_subtotals:
             self._append_tax_subtotal(line_tax_el, sub, currency_code, is_line_level=True)
 
-        # cac:Item
         item_el = etree.SubElement(line_el, qn(NS_CAC, "Item"))
         etree.SubElement(item_el, qn(NS_CBC, "Description")).text = etree.CDATA(
             line.description
@@ -415,7 +455,6 @@ class OasisUbl21XmlGeneratorAdapter(IUblInvoiceXmlGeneratorPort):
             listName="Item Classification",
         ).text = line.unspsc_code_cat25
 
-        # cac:Price (Valor unitario sin impuestos)
         price_el = etree.SubElement(line_el, qn(NS_CAC, "Price"))
         etree.SubElement(
             price_el, qn(NS_CBC, "PriceAmount"), currencyID=currency_code

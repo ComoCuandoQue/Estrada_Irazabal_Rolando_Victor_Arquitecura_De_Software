@@ -1,23 +1,8 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
   <ext:UBLExtensions>
     <ext:UBLExtension>
-      <ext:ExtensionContent>
-        <ds:Signature Id="SignABCSoftware">
-          <ds:SignedInfo>
-            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-            <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
-            <ds:Reference URI="">
-              <ds:Transforms>
-                <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
-              </ds:Transforms>
-              <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
-              <ds:DigestValue>RTfOeSJiK9SXXmG85NRaAFKAuW5svmsiCczXf36JbIs=</ds:DigestValue>
-            </ds:Reference>
-          </ds:SignedInfo>
-          <ds:SignatureValue>wOb9CTBwR79oTuZjHraUu/nmLKL9XoaMpJdFkhlc0Bjk1vQ9mzA24hYby/ZhxjUTrNfL0Cr4X1+/HeO+LkVR4Q==</ds:SignatureValue>
-        </ds:Signature>
-      </ext:ExtensionContent>
+      <ext:ExtensionContent><ds:Signature Id="SignatureSP"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>xOPrImjcogp3sM0jUeSceacH28f4cfYc0FXHSAq47f8=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>aQFSz5+TA53uHAeHFfeZpwaRVkZZuOAI/6vUyfNA5HC4vOPZE7dSWHcMKHigB+F4QHCWy+Fv5RrYwBv2RviVyuCWsyOvS7cbfDA5ECQLFfGHjPAHt6uX6rZA+rSkwp7hB6haGi2pI+GCMV6jQ4fWxCebsN+0voaU1hLwP6hOb6LbkE4EqZMffGLRqvgIhksRF9Qr5v0wTEUPGznJAjQW4P6cOQbofc1QTIR5rRrdBX82d4Cx2F5HnbXp6OKnZQSSQpmDSPs9sFAHvYxllm4qgG1clahsJ/NUK9iTQJNrzcRvQAvRUQ2nHczZxHM/W6g2DhwiYNR0orTG59EH/knY7A==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509SubjectName>C=PE,O=ABC SOFTWARE CORP S.A.C.,OU=20555999110,CN=ABC SOFTWARE CORP S.A.C.</ds:X509SubjectName><ds:X509Certificate>MIIDXjCCAkagAwIBAgIUTQTWXKhz7lGj6bp/F/dlkIRZRrUwDQYJKoZIhvcNAQELBQAwaTELMAkGA1UEBhMCUEUxITAfBgNVBAoMGEFCQyBTT0ZUV0FSRSBDT1JQIFMuQS5DLjEUMBIGA1UECwwLMjA1NTU5OTkxMTAxITAfBgNVBAMMGEFCQyBTT0ZUV0FSRSBDT1JQIFMuQS5DLjAeFw0yNTExMTMwMDE2MDhaFw0yOTExMTIwMDE2MDhaMGkxCzAJBgNVBAYTAlBFMSEwHwYDVQQKDBhBQkMgU09GVFdBUkUgQ09SUCBTLkEuQy4xFDASBgNVBAsMCzIwNTU1OTk5MTEwMSEwHwYDVQQDDBhBQkMgU09GVFdBUkUgQ09SUCBTLkEuQy4wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCgorgfCbmzAwKIhch9TphgdPBBJanKi3LDK4Hqw/qVKY7jYkzH5mCizmCUty3TADrBJg5p5b5hiVCDktKtFVbOlKX8zbq0IooO3VXUmiaBhMD1kiu3FpuYIyfyne7gq6+KnHv12Jq3TSERjhvHXaby6yyBEswx1mcmlDTIhCtNSBQNZE/E83cJDzWgnuIx1LFivnnsDpZwTXmFiYBYnmyQT2Xy/LlZhqYt4N2fb8KqoOkPvSgrM9pH+M8vB5gq38YJEycx7F55yEi7vz90kTGVCm0bJ5eOU2RndsVzXjEdj/9oTuH64XZ3qMbgix+RMmQ970otnVDW0xrnOrfgrENHAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAJ8/9BFoiNhZPDOUSH6W4edqiLYfe9BTLiaSE1utbqdcjOYq1mdwRlg3ShscQgCDvfksvwYk/IVyMscNzumnFHhlYaPzGpRUrAzjm+TYwnxV4cqwUaTJ8OJBa80XmvlCxr57r46l0UvBmTRx8o+eRCRPKSdggbp7SI6C6YDwHcLnqL9No47cpEavgXl232okVSMaU7dx4a3Zq0TpnM7QhgP+9HMPGg5i2EheEBUnulY6mHdnylbuvtmldf2nBSHkN+KBd51wD8/MP1+uquAiRPb7yGxHbPdE8ViFmnboPV8NPtvNEovNwu8H/UpNoVO+3sZl2AZVENA6AtqpFO0Z9Hs=</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></ext:ExtensionContent>
     </ext:UBLExtension>
   </ext:UBLExtensions>
   <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
@@ -41,7 +26,7 @@
     </cac:SignatoryParty>
     <cac:DigitalSignatureAttachment>
       <cac:ExternalReference>
-        <cbc:URI>#SignABCSoftware</cbc:URI>
+        <cbc:URI>#SignatureSP</cbc:URI>
       </cac:ExternalReference>
     </cac:DigitalSignatureAttachment>
   </cac:Signature>
