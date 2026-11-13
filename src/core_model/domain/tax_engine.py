@@ -211,7 +211,10 @@ class SunatTaxCalculationEngine:
                     grouped[scheme] = {"taxable": Decimal("0.00"), "tax": Decimal("0.00")}
                     meta[scheme] = (sub.tax_category_id, sub.tax_scheme_name, sub.tax_type_code)
                 if sub.taxable_amount is not None:
-                    grouped[scheme]["taxable"] = round2(grouped[scheme]["taxable"] + sub.taxable_amount)
+                    # Regla SUNAT 3277: En el TaxSubtotal global de IGV (1000), TaxableAmount es la suma
+                    # del Valor de Venta (LineExtensionAmount) de las líneas gravadas (sin sumar el ISC).
+                    base_to_add = line.line_extension_amount if scheme == "1000" else sub.taxable_amount
+                    grouped[scheme]["taxable"] = round2(grouped[scheme]["taxable"] + base_to_add)
                 grouped[scheme]["tax"] = round2(grouped[scheme]["tax"] + sub.tax_amount)
 
         # El TaxAmount global de SUNAT suma únicamente tributos onerosos (1000 IGV + 2000 ISC + 7152 ICBPER)
